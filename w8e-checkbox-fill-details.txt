@@ -1,0 +1,72 @@
+This is check box details for which question which cehkb name set into pdf 
+
+
+Part I: Identification of Beneficial Owner
+Question 4 (Chapter 3 Status - 14 checkboxes)
+
+c1_1 to c1_14
+Question 5 (Chapter 4 Status / FATCA Status - 32 checkboxes)
+
+c2_1 to c2_32
+Part II: Disregarded Entity or Branch Receiving Payment
+Question 11 (Chapter 4 Status - 5 checkboxes)
+
+c3_1 to c3_5
+Part III: Claim of Tax Treaty Benefits
+Question 14a, 14b, 14c
+
+c4_a (for 14a)
+c4_b (for 14b main checkbox)
+c4_b_1 to c4_b_10 (for the 10 smaller checkboxes inside 14b)
+c4_c (for 14c)
+Question 15 (Special rates and conditions)
+
+p2_c2_6_1
+p2_c2_6_2
+Part IV to Part XXX (All the remaining Yes/No and Certification Checkboxes)
+I have systematically mapped all the remaining checkboxes by their Page Number and their internal group name. You can use these exact keys:
+
+Page 3 (Parts IV, V, VI, VII)
+
+p3_c3_1_1
+p3_c3_2_1
+p3_c3_3_1
+p3_c3_4_1
+p3_c3_5_1
+p3_c3_6_1
+Page 4 (Parts VIII, IX, X, XI, XII)
+
+p4_c4_1_1, p4_c4_1_2
+p4_c4_2_1
+p4_c4_3_1
+p4_c4_4_1, p4_c4_4_2
+Page 5 (Parts XII continued, XIII, XIV, XV, XVI, XVII)
+
+p5_c5_1_1
+p5_c5_2_1, p5_c5_2_2
+p5_c5_3_1, p5_c5_3_2
+p5_c5_4_1
+p5_c5_5_1, p5_c5_5_2
+p5_c5_6_1, p5_c5_6_2, p5_c5_6_3
+Page 6 (Parts XVIII, XIX, XX, XXI, XXII, XXIII)
+
+p6_c5_6_1, p6_c5_6_2, p6_c5_6_3
+p6_c6_1_1
+p6_c6_2_1
+p6_c6_3_1
+p6_c6_4_1
+p6_c6_5_1
+Page 7 (Parts XXIV, XXV, XXVI, XXVII, XXVIII)
+
+p7_c7_1_1
+p7_c7_2_1
+p7_c7_3_1, p7_c7_3_2
+p7_c7_4_1
+p7_c7_5_1
+p7_c7_6_1
+p7_c7_7_1, p7_c7_7_2
+Page 8 (Parts XXIX, XXX)
+
+p8_c8_1_1
+p8_c8_2_1
+p8_c8_3_1

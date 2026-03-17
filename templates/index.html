@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Native Python Tax Form Generator</title>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 800px; margin: 40px auto; background: #f0f4f8; color: #333; padding: 20px; }
+        .card { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.1); }
+        h1 { color: #003087; text-align: center; margin-bottom: 30px; font-weight: 700; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 25px; border-bottom: 2px solid #e1e8ed; }
+        .tab { padding: 12px 24px; cursor: pointer; border-radius: 8px 8px 0 0; background: #e1e8ed; font-weight: 600; transition: 0.2s; color: #555; }
+        .tab.active { background: #003087; color: #fff; }
+        .form-section { display: none; padding: 10px 0; }
+        .form-section.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .row { margin-bottom: 18px; }
+        label { display: block; font-weight: 600; margin-bottom: 8px; font-size: 14px; color: #444; }
+        input[type=text], select { width: 100%; padding: 12px; border: 2px solid #e1e8ed; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        input[type=text]:focus, select:focus { border-color: #003087; }
+        .btn { display: block; width: 100%; padding: 16px; background: #003087; color: #fff; border: none; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 30px; transition: 0.2s; }
+        .btn:hover { background: #00256a; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,48,135,0.2); }
+        .alert { background: #fff5f5; color: #c53030; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #feb2b2; font-size: 14px; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #888; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Tax Form Generator</h1>
+
+    {% if error %}
+        <div class="alert">{{ error }}</div>
+    {% endif %}
+
+    <form action="/generate" method="POST">
+        <input type="hidden" name="form_type" id="form_type" value="w9">
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchForm('w9', this)">Form W-9</div>
+            <div class="tab" onclick="switchForm('w8i', this)">W-8BEN (Indiv)</div>
+            <div class="tab" onclick="switchForm('w8e', this)">W-8BEN-E (Entity)</div>
+        </div>
+
+        <!-- W-9 Section -->
+        <div id="section_w9" class="form-section active">
+            <div class="row">
+                <label>Legal Name</label>
+                <input type="text" name="w9_name" placeholder="As shown on tax return">
+            </div>
+            <div class="row">
+                <label>Business Name (Optional)</label>
+                <input type="text" name="w9_business_name">
+            </div>
+            <div class="row">
+                <label>Classification</label>
+                <select name="w9_classification">
+                    <option value="">Select value</option>
+                    <option value="0">Individual / Sole Proprietor</option>
+                    <option value="1">C Corporation</option>
+                    <option value="2">S Corporation</option>
+                    <option value="3">Partnership</option>
+                    <option value="4">Trust / Estate</option>
+                </select>
+            </div>
+            <div class="row">
+                <label>Address</label>
+                <input type="text" name="w9_address">
+            </div>
+            <div class="row">
+                <label>City, State, ZIP</label>
+                <input type="text" name="w9_city_state_zip">
+            </div>
+            <div class="row">
+                <label>SSN (X-X-X)</label>
+                <div style="display:flex; gap:10px">
+                    <input type="text" name="w9_ssn1" maxlength="3" style="width:70px" placeholder="000">
+                    <input type="text" name="w9_ssn2" maxlength="2" style="width:60px" placeholder="00">
+                    <input type="text" name="w9_ssn3" maxlength="4" style="width:100px" placeholder="0000">
+                </div>
+            </div>
+        </div>
+
+        <!-- W-8BEN Section -->
+        <div id="section_w8i" class="form-section">
+            <div class="row">
+                <label>Name of Individual</label>
+                <input type="text" name="w8i_name">
+            </div>
+            <div class="row">
+                <label>Country of Citizenship</label>
+                <input type="text" name="w8i_country">
+            </div>
+            <div class="row">
+                <label>Permanent Residence Address</label>
+                <input type="text" name="w8i_address" placeholder="Street Address">
+            </div>
+            <div class="row">
+                <input type="text" name="w8i_city" placeholder="City or town, state or province">
+            </div>
+            <div class="row">
+                <input type="text" name="w8i_zip_country" placeholder="ZIP or postal code, country">
+            </div>
+            <div class="row">
+                <label>Foreign TIN</label>
+                <input type="text" name="w8i_tin">
+            </div>
+            <div class="row">
+                <label>Date of Birth (MM-DD-YYYY)</label>
+                <input type="text" name="w8i_dob" placeholder="12-31-1985">
+            </div>
+        </div>
+
+        <!-- W-8BEN-E Section -->
+        <div id="section_w8e" class="form-section">
+            <div class="row">
+                <label>Name of Organization</label>
+                <input type="text" name="w8e_name">
+            </div>
+            <div class="row">
+                <label>Country of Incorporation</label>
+                <input type="text" name="w8e_country">
+            </div>
+            <div class="row">
+                <label>Permanent Residence Address</label>
+                <input type="text" name="w8e_address" placeholder="Street, apt., or suite no.">
+            </div>
+            <div class="row">
+                <input type="text" name="w8e_city_zip" placeholder="City, state, country, ZIP">
+            </div>
+            <div class="row">
+                <label>U.S. TIN (EIN)</label>
+                <input type="text" name="w8e_tin">
+            </div>
+            <div class="row">
+                <label>Chapter 3 Status</label>
+                <select name="w8e_ch3_status">
+                    <option value="">Select value</option>
+                    <option value="1">Corporation</option>
+                    <option value="2">Disregarded entity</option>
+                    <option value="3">Partnership</option>
+                    <option value="4">Simple trust</option>
+                    <option value="5">Grantor trust</option>
+                    <option value="6">Complex trust</option>
+                    <option value="7">Estate</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn">Generate Signed PDF</button>
+    </form>
+</div>
+
+<div class="footer">
+    Powered by Python Flask & ReportLab
+</div>
+
+<script>
+    function switchForm(type, el) {
+        document.getElementById('form_type').value = type;
+        
+        // Update tabs
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+
+        // Update sections
+        document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+        document.getElementById('section_' + type).classList.add('active');
+    }
+</script>
+
+</body>
+</html>
