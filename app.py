@@ -51,8 +51,8 @@ def generate():
         logging.info(f"FORM DATA: {key} = {value}")
     
     # Get signature path/URL and ensure it's not a placeholder like 'None' or empty
-    # raw_sig_path = request.form.get('signature_company', '').strip()
-    raw_sig_path = "https://tec-sense.co.in/glassbox_portal/uploads/signatures/sig_69bbf1a80401b.png"
+    raw_sig_path = request.form.get('signature_company', '').strip()
+    # raw_sig_path = "https://tec-sense.co.in/glassbox_portal/uploads/signatures/sig_69bbf1a80401b.png"
     SIGNATURE_PATH = raw_sig_path if raw_sig_path.lower() not in ['', 'none', 'undefined', 'null'] else ''
     
     logging.info(f"DEBUG: SIGNATURE_PATH = '{SIGNATURE_PATH}'")
