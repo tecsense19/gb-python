@@ -27,9 +27,9 @@ except ImportError:
 # w, h is image size
 # tx, ty is relative offset for text
 SIGNATURE_MAP = {
-    "w9":       {"page": 0, "x": 130, "y": 175, "w": 200, "h": 40, "dx": 350, "dy": 12},
-    "w8i":      {"page": 0, "x": 100, "y": 140, "w": 160, "h": 40, "tx": 0, "ty": -10},
-    "w8e":      {"page": 7, "x": 100, "y": 160, "w": 160, "h": 40, "tx": 0, "ty": -10},
+    "w9":       {"page": 0, "x": 130, "y": 205, "w": 200, "h": 40, "dx": 350, "dy": -18},
+    "w8i":      {"page": 0, "x": 90,  "y": 65,  "w": 180, "h": 40, "dx": 350, "dy": 0},
+    "w8e":      {"page": 7, "x": 90,  "y": 110, "w": 180, "h": 40, "dx": 350, "dy": 0},
 }
 
 def fill_xfa(writer, fields: dict):
