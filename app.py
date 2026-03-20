@@ -39,14 +39,14 @@ def generate():
         print(f"FORM DATA: {key} = {value}")
     
     # Get signature path/URL and ensure it's not a placeholder like 'None' or empty
-    raw_sig_path = request.form.get('signature_company', '').strip()
-    SIGNATURE_PATH = raw_sig_path if raw_sig_path.lower() not in ['', 'none', 'undefined', 'null'] else ''
-    
+    # raw_sig_path = request.form.get('signature_company', '').strip()
+    # SIGNATURE_PATH = raw_sig_path if raw_sig_path.lower() not in ['', 'none', 'undefined', 'null'] else ''
+    SIGNATURE_PATH = request.form.get('signature_company')
     # print(f"DEBUG: SIGNATURE_PATH = '{SIGNATURE_PATH}'")
-    if SIGNATURE_PATH:
-        # Check if it's a URL or a local file
-        path_exists = os.path.exists(SIGNATURE_PATH) or SIGNATURE_PATH.startswith('http')
-        print(f"DEBUG: PATH EXISTS OR URL = {path_exists}")
+    # if SIGNATURE_PATH:
+    #     # Check if it's a URL or a local file
+    #     path_exists = os.path.exists(SIGNATURE_PATH) or SIGNATURE_PATH.startswith('http')
+    #     print(f"DEBUG: PATH EXISTS OR URL = {path_exists}")
     
     form_type = request.form.get('form_type', 'w9')
     fields = {}
@@ -370,45 +370,39 @@ def generate():
         fill_pdf.fill_xfa(writer, fields)
 
         # Add Signature
-        temp_sig = None
-        current_sig_path = SIGNATURE_PATH
-        
-        # Only proceed if we have a non-empty path/URL
-        if current_sig_path:
-            if current_sig_path.startswith('http'):
-                try:
-                    print(f"DEBUG: Downloading signature from URL: {current_sig_path}")
-                    suffix = ".png" if ".png" in current_sig_path.lower() else ".jpg"
-                    fd, temp_sig = tempfile.mkstemp(suffix=suffix)
-                    os.close(fd)
-                    req = urllib.request.Request(current_sig_path, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
-                    with urllib.request.urlopen(req) as response, open(temp_sig, 'wb') as out_file:
-                        out_file.write(response.read())
-                    current_sig_path = temp_sig
-                    print(f"DEBUG: Downloaded to temp file: {current_sig_path}")
-                except Exception as e:
-                    print(f"DEBUG: Failed to download signature: {e}")
-                    current_sig_path = None # Don't try to add if download failed
-                    temp_sig = None
-
-            if current_sig_path and os.path.exists(current_sig_path):
-                print(f"DEBUG: Calling add_signature with {current_sig_path}")
-                fill_pdf.add_signature(writer, current_sig_path, form_type)
-            else:
-                print(f"DEBUG: Skipping add_signature because path does not exist or is empty")
-        else:
-            print(f"DEBUG: Skipping add_signature because no signature was provided in the form")
-
+        temp_sig_path = None
+        if SIGNATURE_PATH:
+            try:
+                if SIGNATURE_PATH.startswith(('http://', 'https://')):
+                    # Download to temp file with a User-Agent to avoid 403 Forbidden
+                    try:
+                        req = urllib.request.Request(SIGNATURE_PATH, headers={'User-Agent': 'Mozilla/5.0'})
+                        with urllib.request.urlopen(req) as response:
+                            if response.getcode() == 200:
+                                with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+                                    tmp.write(response.read())
+                                    temp_sig_path = tmp.name
+                    except Exception as e:
+                        print(f"Warning: Failed to download signature: {e}")
+                    
+                    if temp_sig_path and os.path.exists(temp_sig_path):
+                        fill_pdf.add_signature(writer, temp_sig_path, form_type)
+                elif os.path.exists(SIGNATURE_PATH):
+                    fill_pdf.add_signature(writer, SIGNATURE_PATH, form_type)
+            finally:
+                # Clean up temp file
+                if temp_sig_path and os.path.exists(temp_sig_path):
+                    os.remove(temp_sig_path)
         # Save output
         with open(output_path, 'wb') as f:
             writer.write(f)
 
         # Cleanup temp signature
-        if temp_sig and os.path.exists(temp_sig):
-            try:
-                os.remove(temp_sig)
-            except:
-                pass
+        # if temp_sig and os.path.exists(temp_sig):
+        #     try:
+        #         os.remove(temp_sig)
+        #     except:
+        #         pass
 
         return send_file(output_path, as_attachment=True, download_name=f"{form_type}_Generated.pdf")
     except Exception as e:
