@@ -192,8 +192,9 @@ def generate():
             # 'f_19': '',
             # 'f_20': '',
 
+            'f_20': '',
+            'Date': datetime.datetime.now().strftime("%m-%d-%Y"),
             'f_21': request.form.get('legal_name'),
-            'f_22': datetime.datetime.now().strftime("%m-%d-%Y"),
         }
     elif form_type == 'w8e':
         fields = {
