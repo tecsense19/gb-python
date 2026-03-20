@@ -10,6 +10,7 @@ if os.path.exists(LIB_PATH) and LIB_PATH not in sys.path:
 from flask import Flask, render_template, request, send_file, Response
 from pypdf import PdfReader, PdfWriter
 from pypdf.generic import NameObject, BooleanObject
+import logging
 
 # Import our existing PDF generation logic
 import fill_pdf
@@ -24,6 +25,18 @@ TEMPLATES = {
 }
 OUTPUT_DIR = os.path.join(BASE_DIR, 'filled')
 
+# Set up logging to generate a log file on the server
+log_file_path = os.path.join(BASE_DIR, 'app_server.log')
+logging.basicConfig(
+    filename=log_file_path,
+    level=logging.DEBUG,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+# Also print to console
+console = logging.StreamHandler()
+console.setLevel(logging.DEBUG)
+logging.getLogger('').addHandler(console)
 
 if not os.path.exists(OUTPUT_DIR):
     os.makedirs(OUTPUT_DIR)
@@ -34,9 +47,9 @@ def index():
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    print("\n--- NEW REQUEST RECEIVED ---")
+    logging.info("--- NEW REQUEST RECEIVED ---")
     for key, value in request.form.items():
-        print(f"FORM DATA: {key} = {value}")
+        logging.info(f"FORM DATA: {key} = {value}")
     
     # Get signature path/URL and ensure it's not a placeholder like 'None' or empty
     # raw_sig_path = request.form.get('signature_company', '').strip()
@@ -372,6 +385,7 @@ def generate():
         # Add Signature
         temp_sig_path = None
         if SIGNATURE_PATH:
+            import datetime, urllib.parse, traceback
             try:
                 if SIGNATURE_PATH.startswith(('http://', 'https://')):
                     # Download to temp file with a User-Agent to avoid 403 Forbidden
@@ -379,20 +393,44 @@ def generate():
                         req = urllib.request.Request(SIGNATURE_PATH, headers={'User-Agent': 'Mozilla/5.0'})
                         with urllib.request.urlopen(req) as response:
                             if response.getcode() == 200:
-                                with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+                                # Ensure correct file extension for reportlab
+                                ext = os.path.splitext(urllib.parse.urlparse(SIGNATURE_PATH).path)[1].lower()
+                                if ext not in ['.jpg', '.jpeg', '.png']: 
+                                    ext = '.png'
+                                
+                                with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
                                     tmp.write(response.read())
                                     temp_sig_path = tmp.name
+                            else:
+                                logging.warning(f"Signature download failed: HTTP {response.getcode()}")
+                                with open(os.path.join(OUTPUT_DIR, 'signature_debug.log'), 'a') as df:
+                                    df.write(f"[{datetime.datetime.now()}] HTTP {response.getcode()} for {SIGNATURE_PATH}\n")
                     except Exception as e:
-                        print(f"Warning: Failed to download signature: {e}")
+                        logging.error(f"Failed to download signature: {e}")
+                        with open(os.path.join(OUTPUT_DIR, 'signature_debug.log'), 'a') as df:
+                            df.write(f"[{datetime.datetime.now()}] Download Error for {SIGNATURE_PATH}: {e}\n")
                     
                     if temp_sig_path and os.path.exists(temp_sig_path):
                         fill_pdf.add_signature(writer, temp_sig_path, form_type)
+                        logging.info("SUCCESS: Signature was downloaded and successfully added to the PDF.")
+                    else:
+                        logging.warning("FAILURE: Signature URL provided but failed to download, so it was NOT added to the PDF.")
+                        
                 elif os.path.exists(SIGNATURE_PATH):
                     fill_pdf.add_signature(writer, SIGNATURE_PATH, form_type)
+                    logging.info("SUCCESS: Local signature file was successfully added to the PDF.")
+                else:
+                    logging.warning("FAILURE: Local signature path provided but file does not exist. NOT added to the PDF.")
+            except Exception as e:
+                logging.error(f"CRITICAL FAILURE: Crashed while adding signature: {e}")
+                with open(os.path.join(OUTPUT_DIR, 'signature_debug.log'), 'a') as df:
+                    df.write(f"[{datetime.datetime.now()}] Add Signature Crash: {traceback.format_exc()}\n")
             finally:
                 # Clean up temp file
                 if temp_sig_path and os.path.exists(temp_sig_path):
                     os.remove(temp_sig_path)
+        else:
+            logging.info("INFO: No signature URL or path was requested. PDF generated WITHOUT a signature.")
         # Save output
         with open(output_path, 'wb') as f:
             writer.write(f)
