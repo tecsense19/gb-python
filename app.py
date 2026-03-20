@@ -1,5 +1,8 @@
-import os, sys, json, uuid ,requests, tempfile
+import os, sys, json, uuid, requests, tempfile, datetime
 from pathlib import Path
+
+# Required libraries to install on live server:
+# pip install flask pypdf requests reportlab
 
 # Add local 'lib' directory to sys.path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -189,8 +192,8 @@ def generate():
             # 'f_19': '',
             # 'f_20': '',
 
-            'f_21': request.form.get('name_of_authorized_signor'),
-            'f_22': '',
+            'f_21': request.form.get('legal_name'),
+            'f_22': datetime.datetime.now().strftime("%m-%d-%Y"),
         }
     elif form_type == 'w8e':
         fields = {
@@ -207,7 +210,8 @@ def generate():
             'f1_11': '',
             'f1_12': '',
             'f1_13': '',
-
+            'f8_31': request.form.get('legal_name'),
+            'f8_32': datetime.datetime.now().strftime("%m-%d-%Y"),
             # Those filed are filled by the comapny staff
             # 'f2_1':  'f2_1value',
             # 'f2_2':  'f2_2value',

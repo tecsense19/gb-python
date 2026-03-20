@@ -27,9 +27,9 @@ except ImportError:
 # w, h is image size
 # tx, ty is relative offset for text
 SIGNATURE_MAP = {
-    "w9":       {"page": 0, "x": 130, "y": 205, "w": 200, "h": 40, "dx": 350, "dy": -18},
-    "w8i":      {"page": 0, "x": 90,  "y": 65,  "w": 180, "h": 40, "dx": 350, "dy": 0},
-    "w8e":      {"page": 7, "x": 90,  "y": 110, "w": 180, "h": 40, "dx": 350, "dy": 0},
+    "w9":       {"page": 0, "x": 130, "y": 205, "w": 200, "h": 40, "dx": 350, "dy": -18, "draw_date": True},
+    "w8i":      {"page": 0, "x": 90,  "y": 65,  "w": 180, "h": 40, "draw_date": False},
+    "w8e":      {"page": 7, "x": 90,  "y": 110, "w": 180, "h": 40, "draw_date": False},
 }
 
 def fill_xfa(writer, fields: dict):
@@ -162,15 +162,16 @@ def add_signature(writer, signature_path, form_type):
         print(f"ERROR: Failed to draw signature image: {e}", file=sys.stderr)
         return
 
-    # 2. Draw Date
-    now = datetime.datetime.now().strftime("%Y-%m-%d")
-    
-    can.setFont("Helvetica", 10)
-    can.setFillAlpha(1.0)
-    # Use dx/dy if provided, else fallback to tx/ty
-    dx = config.get("dx", config.get("tx", 0))
-    dy = config.get("dy", config.get("ty", 0))
-    can.drawString(config["x"] + dx, config["y"] + dy, now)
+    if config.get("draw_date", True):
+        # 2. Draw Date
+        now = datetime.datetime.now().strftime("%Y-%m-%d")
+        
+        can.setFont("Helvetica", 10)
+        can.setFillAlpha(1.0)
+        # Use dx/dy if provided, else fallback to tx/ty
+        dx = config.get("dx", config.get("tx", 0))
+        dy = config.get("dy", config.get("ty", 0))
+        can.drawString(config["x"] + dx, config["y"] + dy, now)
     
     can.save()
     packet.seek(0)
