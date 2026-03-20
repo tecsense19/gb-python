@@ -42,7 +42,7 @@ def generate():
     raw_sig_path = request.form.get('signature_company', '').strip()
     SIGNATURE_PATH = raw_sig_path if raw_sig_path.lower() not in ['', 'none', 'undefined', 'null'] else ''
     
-    print(f"DEBUG: SIGNATURE_PATH = '{SIGNATURE_PATH}'")
+    # print(f"DEBUG: SIGNATURE_PATH = '{SIGNATURE_PATH}'")
     if SIGNATURE_PATH:
         # Check if it's a URL or a local file
         path_exists = os.path.exists(SIGNATURE_PATH) or SIGNATURE_PATH.startswith('http')
@@ -375,7 +375,7 @@ def generate():
         
         # Only proceed if we have a non-empty path/URL
         if current_sig_path:
-            if current_sig_path.startswith('http'):
+            if current_sig_path.startswith('https'):
                 try:
                     print(f"DEBUG: Downloading signature from URL: {current_sig_path}")
                     suffix = ".png" if ".png" in current_sig_path.lower() else ".jpg"
