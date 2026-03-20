@@ -375,13 +375,15 @@ def generate():
         
         # Only proceed if we have a non-empty path/URL
         if current_sig_path:
-            if current_sig_path.startswith('https'):
+            if current_sig_path.startswith('http'):
                 try:
                     print(f"DEBUG: Downloading signature from URL: {current_sig_path}")
                     suffix = ".png" if ".png" in current_sig_path.lower() else ".jpg"
                     fd, temp_sig = tempfile.mkstemp(suffix=suffix)
                     os.close(fd)
-                    urllib.request.urlretrieve(current_sig_path, temp_sig)
+                    req = urllib.request.Request(current_sig_path, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
+                    with urllib.request.urlopen(req) as response, open(temp_sig, 'wb') as out_file:
+                        out_file.write(response.read())
                     current_sig_path = temp_sig
                     print(f"DEBUG: Downloaded to temp file: {current_sig_path}")
                 except Exception as e:
