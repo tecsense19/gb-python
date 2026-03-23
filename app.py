@@ -75,14 +75,37 @@ def generate():
     if form_type == 'w9':
         import re
         
-        # Process EIN (Employer Identification Number) automatically
-        raw_ein = request.form.get('tax_id')
-        # Remove only spaces and dashes, allowing both digits and characters (letters)
-        # clean_ein = re.sub(r'[\s\-]', '', raw_ein)
-        clean_ein = re.sub(r'\D', '', raw_ein)
+        entity_val = request.form.get('legal_designation')
+        raw_tax_id = request.form.get('txt_id') or request.form.get('tax_id', '')
         
-        ein_part1 = clean_ein[:2]
-        ein_part2 = clean_ein[2:9]
+        ssn_part1, ssn_part2, ssn_part3 = "", "", ""
+        ein_part1, ein_part2 = "", ""
+
+        # First resolve the parts based on whether there are hyphens
+        parts = raw_tax_id.split('-')
+        if len(parts) == 3:
+            s_part1, s_part2, s_part3 = parts[0], parts[1], parts[2]
+            e_part1, e_part2 = "".join(parts)[:2], "".join(parts)[2:9]
+        elif len(parts) == 2:
+            s_part1, s_part2, s_part3 = "".join(parts)[:3], "".join(parts)[3:5], "".join(parts)[5:9]
+            e_part1, e_part2 = parts[0], parts[1]
+        else:
+            clean_tax_id = re.sub(r'\D', '', raw_tax_id) if raw_tax_id else ''
+            s_part1, s_part2, s_part3 = clean_tax_id[:3], clean_tax_id[3:5], clean_tax_id[5:9]
+            e_part1, e_part2 = clean_tax_id[:2], clean_tax_id[2:9]
+
+        if entity_val == 'Single Person':
+            mapped_entity = 'individual'
+            ssn_part1, ssn_part2, ssn_part3 = s_part1, s_part2, s_part3
+        elif entity_val in ['Entity', 'Entity / Corporation']:
+            mapped_entity = 'c-corporation'
+            ein_part1, ein_part2 = e_part1, e_part2
+        elif entity_val == 'Trust':
+            mapped_entity = 'trust'
+            ein_part1, ein_part2 = e_part1, e_part2
+        else:
+            mapped_entity = entity_val.lower() if entity_val else ''
+            ein_part1, ein_part2 = e_part1, e_part2
 
         fields = {
             'f1_01': request.form.get('legal_name'),
@@ -94,13 +117,11 @@ def generate():
             'f1_08': city_state,
             'f1_09': '',
             'f1_10': '',
-            'f1_11': "",
-            'f1_12': "",
-            # 'f1_14': "14",
-            # 'f1_15': "f15",
+            'f1_11': ssn_part1,
+            'f1_12': ssn_part2,
+            'f1_13': ssn_part3,
             'f1_14': ein_part1,
             'f1_15': ein_part2,
-
 
             # 'f1_01': 'f1 value',
             # 'f1_02': 'f2 value',
@@ -115,9 +136,15 @@ def generate():
             # 'f1_12': "f12 value",
             # 'f1_13': 'f13 value',
         }
-        entity = request.form.get('entity')
 
-        fields['f1_03'] = entity[0].lower() if entity else ''
+        if mapped_entity == 'c-corporation':
+            fields['f1_03'] = 'C'
+        elif mapped_entity == 's-corporation':
+            fields['f1_03'] = 'S'
+        elif mapped_entity == 'partnership':
+            fields['f1_03'] = 'P'
+        else:
+            fields['f1_03'] = ''
 
         entity_map = {
             'individual': 'c1_1',
@@ -129,21 +156,13 @@ def generate():
             'other': 'c1_7'
         }
 
-        # entity_map = {
-        #     'individual': 'c1_1',
-        #     'c-corporation': 'c1_2',
-        #     's-corporation': 'c1_3',
-        #     'partnership': 'c1_4',
-        #     'trust': 'c1_5',
-        #     'Limited Liability Company': 'c1_6',
-        #     'other': 'c1_7'
-        # }
-
         for key in entity_map.values():
             fields[key] = ''
 
-        if entity in entity_map:
-            fields[entity_map[entity]] = 1
+        if mapped_entity in entity_map:
+            fields[entity_map[mapped_entity]] = 1
+        elif entity_val and entity_val.lower() in entity_map:
+            fields[entity_map[entity_val.lower()]] = 1
     elif form_type == 'w8i':
         fields = {
             # 'f_1':  'f1_value',
@@ -178,7 +197,7 @@ def generate():
             'f_6':  address_line2 if address_line2 else '',
             'f_7':  city_state2 if city_state2 else '',
             'f_8':  request.form.get('country2') if request.form.get('country2') else '',
-            'f_9':  request.form.get('tax_id') if request.form.get('tax_id') else '',
+            'f_9':  request.form.get('txt_id') or request.form.get('tax_id', ''),
             'f_10': '',
             'f_11': request.form.get('ref_number') if request.form.get('ref_number') else '',
             'f_12': request.form.get('dob') if request.form.get('dob') else '',
@@ -283,6 +302,10 @@ def generate():
                     fields[f'topmostSubform[0].Page1[0].c1_1[{i-1}]'] = val
                 else:
                     fields[f'topmostSubform[0].Page1[0].c1_2[{i-13}]'] = val
+        
+        w8e_entity_val = request.form.get('legal_designation')
+        if w8e_entity_val in ['Entity', 'Entity / Corporation']:
+            fields['topmostSubform[0].Page1[0].c1_1[0]'] = 1
 
         # Question 5: Chapter 4 Status (FATCA status) (32 options: c2_1 to c2_32)
         for i in range(1, 33):
