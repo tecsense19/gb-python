@@ -109,7 +109,7 @@ def generate():
 
         fields = {
             'f1_01': request.form.get('legal_name'),
-            'f1_02': request.form.get('company_name'),
+            'f1_02': '',
             'f1_04': '',
             'f1_05': '',
             'f1_06': '',
